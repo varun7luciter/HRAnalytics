@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PeopleMetrics — HR Analytics Template</title>
+<meta name="description" content="Professional HR analytics dashboard template: headcount, recruitment, compensation and retention insights." />
+<style>
+/* ============================================================
+   DESIGN TOKENS — customize brand colors here
+   ============================================================ */
+:root{
+  --bg:#f4f6f9;
+  --surface:#ffffff;
+  --surface-2:#f8fafc;
+  --sidebar:#132238;
+  --sidebar-soft:#1c3050;
+  --text:#16233a;
+  --muted:#66748c;
+  --border:#e3e8ef;
+  --primary:#1f5fa9;
+  --primary-soft:#e8f0fa;
+  --teal:#2c8c85;
+  --amber:#b8862b;
+  --rose:#a8443f;
+  --violet:#5b5f9e;
+  --radius:12px;
+  --shadow:0 1px 2px rgba(19,34,56,.06), 0 8px 24px rgba(19,34,56,.06);
+  --font:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;font-weight:650;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer}
+
+/* ---------- Layout ---------- */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:248px;flex-shrink:0;background:var(--sidebar);color:#cfd9e6;display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:40;transition:transform .25s ease}
+.brand{display:flex;align-items:center;gap:10px;padding:20px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--teal));display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+.brand b{color:#fff;font-size:15px;display:block}
+.brand span{font-size:11.5px;color:#8fa2ba;letter-spacing:.06em;text-transform:uppercase}
+.nav{padding:14px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.nav .label{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#7f92ab;padding:14px 10px 6px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;padding:10px 12px;border:0;background:transparent;color:#cfd9e6;border-radius:9px;font-size:14px;text-align:left}
+.nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav button.active{background:var(--sidebar-soft);color:#fff;box-shadow:inset 3px 0 0 var(--primary)}
+.nav svg{width:17px;height:17px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.7}
+.side-foot{margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,.08);font-size:12px;color:#8fa2ba}
+
+.main{flex:1;margin-left:248px;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;padding:12px 22px}
+.topbar .title{min-width:0}
+.topbar h1{font-size:19px;line-height:1.2}
+.topbar p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.hamburger{display:none;border:1px solid var(--border);background:var(--surface);border-radius:9px;padding:8px 10px}
+
+.content{padding:22px;display:flex;flex-direction:column;gap:20px}
+.page{display:none;flex-direction:column;gap:20px}
+.page.active{display:flex}
+
+/* ---------- Controls ---------- */
+.btn{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:8px 13px;border-radius:9px;font-size:13.5px;display:inline-flex;align-items:center;gap:7px;transition:.15s}
+.btn:hover{border-color:#c9d3e0;background:var(--surface-2)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.primary:hover{background:#1a5296}
+select,input[type=search],input[type=text]{border:1px solid var(--border);background:var(--surface);border-radius:9px;padding:8px 11px;font-size:13.5px;color:var(--text);outline:none;min-width:0}
+select:focus,input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.dropdown{position:relative}
+.menu{position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);min-width:180px;padding:6px;display:none;z-index:50}
+.menu.open{display:block}
+.menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:8px 10px;border-radius:7px;font-size:13.5px;color:var(--text)}
+.menu button:hover{background:var(--surface-2)}
+
+/* ---------- Cards & grid ---------- */
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g23{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+.card h3{font-size:14.5px}
+.card .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.card-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px;margin-bottom:14px}
+
+.kpi .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.kpi .name{font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.kpi .icon{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);flex-shrink:0}
+.kpi .val{font-size:28px;font-weight:700;margin-top:10px;letter-spacing:-.02em}
+.kpi .delta{font-size:12.5px;margin-top:4px;display:flex;align-items:center;gap:6px;color:var(--muted)}
+.up{color:var(--teal);font-weight:600}
+.down{color:var(--rose);font-weight:600}
+
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--surface-2);color:var(--muted);border:1px solid var(--border)}
+.badge.good{background:#e7f3f1;color:var(--teal);border-color:#cfe6e2}
+.badge.warn{background:#fbf2e0;color:var(--amber);border-color:#f0e2c2}
+.badge.bad{background:#f9e9e8;color:var(--rose);border-color:#f0d4d2}
+.badge.info{background:var(--primary-soft);color:var(--primary);border-color:#d3e3f5}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);overflow-x:auto}
+.tabs button{border:0;background:transparent;padding:9px 13px;font-size:13.5px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+
+/* ---------- Charts (pure SVG/CSS) ---------- */
+.chart{width:100%;height:auto;overflow:visible}
+.axis{stroke:var(--border);stroke-width:1}
+.gridline{stroke:#eef2f7;stroke-width:1}
+.tick{font-size:10px;fill:var(--muted)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:10px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px}
+.bars{display:flex;flex-direction:column;gap:12px}
+.bar-row{display:grid;grid-template-columns:minmax(90px,132px) minmax(0,1fr) 54px;gap:12px;align-items:center;font-size:13px}
+.bar-row .track{display:block;background:var(--surface-2);border-radius:999px;height:9px;overflow:hidden}
+.bar-row .fill{display:block;height:9px;border-radius:999px;background:var(--primary);transition:width .6s ease}
+.bar-row .num{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.funnel{display:flex;flex-direction:column;gap:9px}
+.funnel .step{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 14px;border-radius:10px;background:var(--primary);color:#fff;font-size:13.5px;margin:0 auto;width:100%}
+.funnel .step span{font-variant-numeric:tabular-nums;font-weight:600}
+
+/* ---------- Tables ---------- */
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:680px}
+th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--primary)}
+th .arrow{opacity:.35;font-size:10px}
+th.sorted .arrow{opacity:1;color:var(--primary)}
+td{padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+.person{display:flex;align-items:center;gap:10px;min-width:0}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-size:11.5px;font-weight:700;flex-shrink:0}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filters .grow{flex:1;min-width:180px}
+.empty{padding:26px;text-align:center;color:var(--muted);font-size:13.5px}
+.meta{font-size:12.5px;color:var(--muted);padding:10px 14px;border-top:1px solid var(--border);background:var(--surface-2)}
+
+.overlay{position:fixed;inset:0;background:rgba(19,34,56,.45);display:none;z-index:35}
+.overlay.open{display:block}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1180px){ .g4{grid-template-columns:repeat(2,minmax(0,1fr))} .g23,.g3{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .hamburger{display:inline-flex}
+  .g2{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){
+  .g4{grid-template-columns:minmax(0,1fr)}
+  .content{padding:14px}
+  .topbar{padding:10px 14px}
+  .kpi .val{font-size:24px}
+}
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay"></div>
+<div class="layout">
+
+  <!-- ============ SIDEBAR NAVIGATION ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">PM</div>
+      <div><b>PeopleMetrics</b><span>HR Analytics</span></div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="label">Analytics</div>
+      <button data-page="dashboard" class="active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</button>
+      <button data-page="employees"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 11.5a3 3 0 1 0-1.5-5.6"/><path d="M17.5 20a6 6 0 0 0-2-4.4"/></svg>Employee Data</button>
+      <button data-page="recruitment"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>Recruitment</button>
+      <button data-page="compensation"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.2A2.8 2.8 0 0 0 12 8c-1.6 0-2.6.8-2.6 2s1 1.8 2.6 2 2.6.8 2.6 2-1 2-2.6 2a2.8 2.8 0 0 1-2.5-1.2M12 6.5v11"/></svg>Compensation</button>
+      <button data-page="retention"><svg viewBox="0 0 24 24"><path d="M3 17l5.5-6 4 4L21 6"/><path d="M21 11V6h-5"/></svg>Retention</button>
+      <div class="label">Workspace</div>
+      <button data-page="dashboard"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>Reports</button>
+      <button data-page="dashboard"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.5 19.4a2 2 0 1 1-2.8-2.8 1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7.5a2 2 0 1 1 2.8-2.8 1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1 2 2 0 1 1 2.8 2.8 1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1.3z"/></svg>Settings</button>
+    </nav>
+    <div class="side-foot">Data refreshed <b>Today, 06:00</b><br>Source: HRIS · ATS · Payroll</div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <div class="title" style="display:flex;align-items:center;gap:12px;min-width:0">
+        <button class="hamburger" id="hamburger" aria-label="Toggle navigation">☰</button>
+        <div style="min-width:0">
+          <h1 id="pageTitle">People Dashboard</h1>
+          <p id="pageSub">Company-wide workforce overview · FY2026</p>
+        </div>
+      </div>
+      <div class="tools">
+        <!-- DATE RANGE FILTER: wire to your data layer -->
+        <select id="dateRange" aria-label="Date range">
+          <option>Last 30 days</option><option selected>Last 90 days</option>
+          <option>Year to date</option><option>Last 12 months</option><option>Custom range…</option>
+        </select>
+        <div class="dropdown">
+          <button class="btn" id="exportBtn">Export ▾</button>
+          <div class="menu" id="exportMenu">
+            <button data-fmt="CSV">Download CSV</button>
+            <button data-fmt="Excel">Download Excel</button>
+            <button data-fmt="PDF">Export PDF report</button>
+            <button data-fmt="Email">Schedule email</button>
+          </div>
+        </div>
+        <button class="btn primary">＋ New report</button>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section class="page active" id="page-dashboard">
+        <div class="grid g4" id="kpiRow"><!-- KPI cards injected by JS --></div>
+
+        <div class="grid g23">
+          <div class="card">
+            <div class="card-head"><div><h3>Headcount vs. attrition</h3><div class="sub">Monthly, rolling 12 months</div></div><span class="badge info">HRIS</span></div>
+            <div id="chartHeadcount"></div>
+            <div class="legend"><span><i style="background:var(--primary)"></i>Headcount</span><span><i style="background:var(--rose)"></i>Exits</span><span><i style="background:var(--teal)"></i>Hires</span></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Headcount by department</h3><div class="sub">Active employees</div></div></div>
+            <div class="bars" id="deptBars"></div>
+          </div>
+        </div>
+
+        <div class="grid g3">
+          <div class="card">
+            <div class="card-head"><div><h3>Engagement score</h3><div class="sub">Quarterly pulse survey</div></div></div>
+            <div id="chartEngagement"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Hiring pipeline</h3><div class="sub">Open requisitions: 38</div></div></div>
+            <div class="funnel" id="pipelineFunnel"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Diversity snapshot</h3><div class="sub">Global workforce</div></div></div>
+            <div class="bars" id="diversityBars"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= EMPLOYEES ================= -->
+      <section class="page" id="page-employees">
+        <div class="grid g4" id="empKpis"></div>
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Employee directory</h3><div class="sub">Search, filter and sort the workforce dataset</div></div>
+            <button class="btn">⤓ Export view</button>
+          </div>
+          <div class="filters" style="margin-bottom:14px">
+            <input class="grow" type="search" id="empSearch" placeholder="Search name, role or location…" />
+            <select id="empDept"><option value="">All departments</option></select>
+            <select id="empStatus"><option value="">All statuses</option><option>Active</option><option>On leave</option><option>Notice period</option></select>
+            <select id="empRisk"><option value="">All risk levels</option><option>Low</option><option>Medium</option><option>High</option></select>
+            <button class="btn" id="empReset">Reset</button>
+          </div>
+          <div class="table-wrap">
+            <table id="empTable">
+              <thead><tr>
+                <th data-key="name">Employee <span class="arrow">▲▼</span></th>
+                <th data-key="dept">Department <span class="arrow">▲▼</span></th>
+                <th data-key="role">Role <span class="arrow">▲▼</span></th>
+                <th data-key="location">Location <span class="arrow">▲▼</span></th>
+                <th data-key="tenure">Tenure (yrs) <span class="arrow">▲▼</span></th>
+                <th data-key="salary">Salary <span class="arrow">▲▼</span></th>
+                <th data-key="perf">Performance <span class="arrow">▲▼</span></th>
+                <th data-key="risk">Flight risk <span class="arrow">▲▼</span></th>
+                <th data-key="status">Status <span class="arrow">▲▼</span></th>
+              </tr></thead>
+              <!-- DYNAMIC: replace rows with your API data -->
+              <tbody id="empBody"></tbody>
+            </table>
+            <div class="meta" id="empMeta"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= RECRUITMENT ================= -->
+      <section class="page" id="page-recruitment">
+        <div class="grid g4" id="recKpis"></div>
+        <div class="grid g23">
+          <div class="card">
+            <div class="card-head"><div><h3>Time-to-hire by department</h3><div class="sub">Median days, requisition open → offer accepted</div></div><span class="badge good">Target 35d</span></div>
+            <div class="bars" id="tthBars"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Applicant sources</h3><div class="sub">Share of qualified applicants</div></div></div>
+            <div class="bars" id="sourceBars"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="tabs" id="recTabs">
+            <button class="active" data-tab="reqs">Open requisitions</button>
+            <button data-tab="offers">Offer acceptance</button>
+            <button data-tab="funnel">Conversion funnel</button>
+          </div>
+          <div style="padding-top:16px">
+            <div class="tab-panel" data-panel="reqs">
+              <div class="table-wrap"><table><thead><tr><th>Requisition</th><th>Department</th><th>Recruiter</th><th>Stage</th><th>Applicants</th><th>Days open</th><th>Priority</th></tr></thead><tbody id="reqBody"></tbody></table></div>
+            </div>
+            <div class="tab-panel" data-panel="offers" style="display:none">
+              <div class="bars" id="offerBars"></div>
+            </div>
+            <div class="tab-panel" data-panel="funnel" style="display:none">
+              <div class="funnel" id="recFunnel"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPENSATION ================= -->
+      <section class="page" id="page-compensation">
+        <div class="grid g4" id="compKpis"></div>
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-head"><div><h3>Salary bands by level</h3><div class="sub">Min · median · max (USD, annualized)</div></div></div>
+            <div id="chartBands"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Compensation budget utilization</h3><div class="sub">FY2026 plan vs. actual by function</div></div></div>
+            <div class="bars" id="budgetBars"></div>
+          </div>
+        </div>
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-head"><div><h3>Equity distribution</h3><div class="sub">Outstanding grants by level</div></div><button class="btn">⤓ Export</button></div>
+            <div class="table-wrap"><table style="min-width:520px"><thead><tr><th>Level</th><th>Employees</th><th>Median grant</th><th>Vested</th><th>Refresh eligible</th></tr></thead><tbody id="equityBody"></tbody></table></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Pay equity review</h3><div class="sub">Adjusted gap vs. benchmark by department</div></div></div>
+            <div class="bars" id="equityGapBars"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= RETENTION ================= -->
+      <section class="page" id="page-retention">
+        <div class="grid g4" id="retKpis"></div>
+        <div class="grid g23">
+          <div class="card">
+            <div class="card-head"><div><h3>Turnover trend</h3><div class="sub">Voluntary vs. involuntary, monthly %</div></div></div>
+            <div id="chartTurnover"></div>
+            <div class="legend"><span><i style="background:var(--rose)"></i>Voluntary</span><span><i style="background:var(--muted)"></i>Involuntary</span></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Exit reasons</h3><div class="sub">Exit interviews, last 12 months</div></div></div>
+            <div class="bars" id="exitBars"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Flight risk indicators</h3><div class="sub">Model-scored employees requiring manager action</div></div>
+            <div class="filters"><select id="riskFilter"><option value="">All departments</option></select><button class="btn">⤓ Export list</button></div>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Tenure</th><th>Last raise</th><th>Engagement</th><th>Risk score</th><th>Signal</th></tr></thead><tbody id="riskBody"></tbody></table><div class="meta" id="riskMeta"></div></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SAMPLE DATA — replace each block with your API response
+   ============================================================ */
+const DATA = {
+  kpis:{
+    dashboard:[
+      {name:"Headcount",val:"1,482",delta:"+3.2%",dir:"up",note:"vs. last quarter",icon:"👥"},
+      {name:"Turnover rate",val:"11.4%",delta:"-1.8 pts",dir:"up",note:"annualized voluntary",icon:"↩"},
+      {name:"Open requisitions",val:"38",delta:"+6",dir:"down",note:"12 aging > 60 days",icon:"📋"},
+      {name:"Engagement score",val:"7.9 / 10",delta:"+0.3",dir:"up",note:"Q2 pulse, 87% response",icon:"◎"}
+    ],
+    employees:[
+      {name:"Active employees",val:"1,482",delta:"+47",dir:"up",note:"net YTD",icon:"👥"},
+      {name:"Median tenure",val:"3.4 yrs",delta:"+0.2",dir:"up",note:"company-wide",icon:"⏱"},
+      {name:"Manager span",val:"6.8",delta:"-0.4",dir:"down",note:"avg. direct reports",icon:"⛬"},
+      {name:"Contractors",val:"126",delta:"8.5%",dir:"up",note:"of total workforce",icon:"◇"}
+    ],
+    recruitment:[
+      {name:"Time to hire",val:"37 days",delta:"-5 days",dir:"up",note:"median, all roles",icon:"⚑"},
+      {name:"Offer acceptance",val:"84%",delta:"+3 pts",dir:"up",note:"last 90 days",icon:"✓"},
+      {name:"Cost per hire",val:"$4,180",delta:"+$260",dir:"down",note:"blended",icon:"$"},
+      {name:"Qualified applicants",val:"2,914",delta:"+12%",dir:"up",note:"passed screen",icon:"⌕"}
+    ],
+    compensation:[
+      {name:"Total comp spend",val:"$164.2M",delta:"78% of plan",dir:"up",note:"FY2026 to date",icon:"$"},
+      {name:"Median base salary",val:"$118,400",delta:"+4.1%",dir:"up",note:"YoY",icon:"≡"},
+      {name:"Compa-ratio",val:"0.98",delta:"+0.02",dir:"up",note:"vs. market midpoint",icon:"◑"},
+      {name:"Equity pool used",val:"62%",delta:"3.1M shares",dir:"up",note:"of authorized pool",icon:"◈"}
+    ],
+    retention:[
+      {name:"Voluntary turnover",val:"11.4%",delta:"-1.8 pts",dir:"up",note:"trailing 12 months",icon:"↩"},
+      {name:"Regretted attrition",val:"4.6%",delta:"-0.5 pts",dir:"up",note:"top performers",icon:"★"},
+      {name:"High flight risk",val:"64",delta:"+9",dir:"down",note:"employees scored",icon:"⚠"},
+      {name:"90-day retention",val:"94.2%",delta:"+1.1 pts",dir:"up",note:"new hires",icon:"⌂"}
+    ]
+  },
+  headcount:[
+    {m:"Sep",hc:1362,hires:34,exits:18},{m:"Oct",hc:1378,hires:31,exits:15},{m:"Nov",hc:1391,hires:27,exits:14},
+    {m:"Dec",hc:1398,hires:19,exits:12},{m:"Jan",hc:1412,hires:36,exits:22},{m:"Feb",hc:1426,hires:33,exits:19},
+    {m:"Mar",hc:1440,hires:35,exits:21},{m:"Apr",hc:1451,hires:29,exits:18},{m:"May",hc:1462,hires:30,exits:19},
+    {m:"Jun",hc:1470,hires:26,exits:18},{m:"Jul",hc:1476,hires:24,exits:18},{m:"Aug",hc:1482,hires:28,exits:22}
+  ],
+  departments:[["Engineering",486],["Sales",264],["Customer Success",188],["Operations",162],["Marketing",118],["Finance",92],["People & HR",74],["Legal",38],["Data & Analytics",60]],
+  engagement:[{q:"Q3'24",v:7.2},{q:"Q4'24",v:7.4},{q:"Q1'25",v:7.3},{q:"Q2'25",v:7.6},{q:"Q3'25",v:7.6},{q:"Q4'25",v:7.9}],
+  pipeline:[["Applicants",2914],["Screened",1180],["Interviewed",486],["Onsite / Panel",212],["Offers",96],["Accepted",81]],
+  diversity:[["Women in workforce",44],["Women in leadership",36],["Underrepresented groups",29],["Global (non-HQ) staff",41]],
+  tth:[["Engineering",48],["Data & Analytics",44],["Finance",38],["Sales",29],["Marketing",33],["Customer Success",26],["Operations",31]],
+  sources:[["Employee referral",31],["LinkedIn / direct",24],["Careers site",18],["Agency partners",12],["University programs",9],["Events & community",6]],
+  offers:[["Engineering",79],["Sales",88],["Marketing",86],["Finance",91],["Customer Success",84],["Operations",90]],
+  reqs:[
+    ["Senior Backend Engineer","Engineering","A. Novak","Onsite",64,52,"High"],
+    ["Enterprise AE, EMEA","Sales","M. Duarte","Screening",112,21,"High"],
+    ["Product Designer II","Marketing","J. Lin","Interview",87,34,"Medium"],
+    ["Financial Analyst","Finance","R. Okafor","Offer",41,44,"Medium"],
+    ["Customer Success Manager","Customer Success","S. Patel","Screening",96,12,"Low"],
+    ["Data Engineer","Data & Analytics","A. Novak","Interview",58,67,"High"],
+    ["People Ops Specialist","People & HR","T. Grant","Applied",73,9,"Low"]
+  ],
+  bands:[
+    {lvl:"L1 · Associate",min:62,med:74,max:88},{lvl:"L2 · Professional",min:82,med:98,max:118},
+    {lvl:"L3 · Senior",min:110,med:134,max:162},{lvl:"L4 · Staff / Lead",min:148,med:176,max:212},
+    {lvl:"L5 · Principal",min:186,med:224,max:268},{lvl:"L6 · Director+",min:228,med:282,max:346}
+  ],
+  budget:[["Engineering",82],["Sales",91],["Marketing",68],["Customer Success",74],["Operations",63],["Finance",57],["People & HR",49]],
+  equity:[["L1 · Associate",312,"1,200","54%","No"],["L2 · Professional",448,"2,800","48%","Yes"],["L3 · Senior",386,"6,500","41%","Yes"],["L4 · Staff / Lead",204,"14,000","37%","Yes"],["L5 · Principal",92,"28,500","33%","Yes"],["L6 · Director+",40,"52,000","29%","Yes"]],
+  equityGap:[["Engineering",1.4],["Sales",2.8],["Marketing",0.9],["Finance",1.1],["Operations",2.2],["Customer Success",0.6]],
+  turnover:[{m:"Sep",v:1.3,i:0.4},{m:"Oct",v:1.1,i:0.3},{m:"Nov",v:1.0,i:0.5},{m:"Dec",v:0.9,i:0.2},{m:"Jan",v:1.5,i:0.6},{m:"Feb",v:1.3,i:0.4},{m:"Mar",v:1.4,i:0.3},{m:"Apr",v:1.2,i:0.4},{m:"May",v:1.1,i:0.3},{m:"Jun",v:1.0,i:0.4},{m:"Jul",v:0.9,i:0.3},{m:"Aug",v:1.1,i:0.5}],
+  exits:[["Career growth",28],["Compensation",22],["Manager relationship",16],["Work-life balance",13],["Relocation",8],["Role fit",7],["Other",6]],
+  risk:[
+    ["Priya Raghavan","Engineering","4.2 yrs","19 months","6.1",88,"Low engagement + no promotion"],
+    ["Daniel Weiss","Sales","2.8 yrs","14 months","5.8",84,"Missed quota, comp below band"],
+    ["Amara Okonkwo","Customer Success","5.1 yrs","22 months","6.4",81,"Tenure plateau"],
+    ["Lukas Fischer","Data & Analytics","1.9 yrs","12 months","6.0",77,"Manager change x2"],
+    ["Sofia Marino","Marketing","3.4 yrs","17 months","6.6",72,"Below-band compa-ratio"],
+    ["Kenji Tanaka","Engineering","6.3 yrs","24 months","6.9",69,"No internal mobility"],
+    ["Hannah Brooks","Operations","2.2 yrs","15 months","6.7",64,"Workload survey flag"]
+  ]
+};
+
+/* Employee dataset (DYNAMIC: swap for /api/employees) */
+const FIRST=["Priya","Daniel","Amara","Lukas","Sofia","Kenji","Hannah","Miguel","Chen","Aisha","Tomas","Nora","Ethan","Leila","Jonas","Grace","Omar","Ines","Viktor","Maya","Ravi","Clara","Noah","Zara","Felix","Elena","Marcus","Yuki","Dara","Pablo"];
+const LAST=["Raghavan","Weiss","Okonkwo","Fischer","Marino","Tanaka","Brooks","Alvarez","Wei","Hassan","Novak","Lindqvist","Cole","Haddad","Berg","Mensah","Farouk","Costa","Petrov","Shah","Iyer","Duarte","Klein","Ahmed","Bauer","Vasquez","Reed","Sato","Lynch","Ortiz"];
+const DEPTS=["Engineering","Sales","Customer Success","Operations","Marketing","Finance","People & HR","Data & Analytics","Legal"];
+const ROLES={Engineering:["Software Engineer","Senior Engineer","Staff Engineer","Engineering Manager"],Sales:["Account Executive","SDR","Sales Manager","Solutions Consultant"],"Customer Success":["CSM","Support Specialist","CS Lead"],Operations:["Ops Analyst","Program Manager","Ops Lead"],Marketing:["Content Manager","Product Marketer","Designer"],Finance:["Financial Analyst","Controller","Accountant"],"People & HR":["Recruiter","HRBP","People Ops Specialist"],"Data & Analytics":["Data Analyst","Data Engineer","Analytics Lead"],Legal:["Counsel","Paralegal","Compliance Manager"]};
+const LOCS=["New York, US","Austin, US","London, UK","Berlin, DE","Dublin, IE","Singapore, SG","Toronto, CA","Remote"];
+const STATUSES=["Active","Active","Active","Active","On leave","Notice period"];
+const RISKS=["Low","Low","Low","Medium","Medium","High"];
+let seed=42; const rnd=()=>((seed=seed*1103515245+12345&0x7fffffff)/0x7fffffff);
+const pick=a=>a[Math.floor(rnd()*a.length)];
+const EMPLOYEES=Array.from({length:64},(_,i)=>{
+  const dept=pick(DEPTS);
+  return {id:1000+i,name:pick(FIRST)+" "+pick(LAST),dept,role:pick(ROLES[dept]),location:pick(LOCS),
+    tenure:+(rnd()*9+0.3).toFixed(1),salary:Math.round((68+rnd()*180))*1000,
+    perf:["Exceeds","Meets","Meets","Meets","Outstanding","Developing"][Math.floor(rnd()*6)],
+    risk:pick(RISKS),status:pick(STATUSES)};
+});
+
+/* ============================================================
+   RENDER HELPERS
+   ============================================================ */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const money=n=>"$"+n.toLocaleString();
+const initials=n=>n.split(" ").map(w=>w[0]).join("").slice(0,2);
+
+function kpiCard(k){return `<div class="card kpi"><div class="top"><span class="name">${k.name}</span><span class="icon">${k.icon}</span></div>
+  <div class="val">${k.val}</div><div class="delta"><span class="${k.dir}">${k.delta}</span> ${k.note}</div></div>`;}
+function renderKpis(el,list){$(el).innerHTML=list.map(kpiCard).join("");}
+
+function barList(el,rows,opts={}){
+  const max=opts.max||Math.max(...rows.map(r=>r[1]));
+  $(el).innerHTML=rows.map(([label,v])=>{
+    const color=opts.color?opts.color(v):"var(--primary)";
+    return `<div class="bar-row"><span title="${label}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span>
+    <span class="track"><span class="fill" style="width:${(v/max*100).toFixed(1)}%;background:${color}"></span></span>
+    <span class="num">${opts.fmt?opts.fmt(v):v}</span></div>`;}).join("");
+}
+function funnel(el,rows){
+  const max=rows[0][1];
+  $(el).innerHTML=rows.map(([label,v],i)=>{
+    const w=40+60*(v/max);
+    const shades=["#1f5fa9","#2a6cb5","#3679bf","#4487c9","#5495d3","#65a3dd"];
+    return `<div class="step" style="width:${w}%;min-width:170px;background:${shades[i]||"#65a3dd"}"><span style="font-weight:500">${label}</span><span>${v.toLocaleString()}</span></div>`;}).join("");
+}
+
+/* SVG combo chart: bars (hires/exits) + line (headcount) */
+function headcountChart(el,data){
+  const W=760,H=260,pl=44,pr=16,pt=16,pb=28,iw=W-pl-pr,ih=H-pt-pb;
+  const maxBar=Math.max(...data.map(d=>Math.max(d.hires,d.exits)))*3.2;
+  const hcMin=Math.min(...data.map(d=>d.hc))-40, hcMax=Math.max(...data.map(d=>d.hc))+20;
+  const x=i=>pl+iw*(i+.5)/data.length;
+  const yH=v=>pt+ih-(v-hcMin)/(hcMax-hcMin)*ih;
+  const yB=v=>pt+ih-(v/maxBar)*ih;
+  let g="";for(let i=0;i<=4;i++){const yy=pt+ih*i/4;g+=`<line class="gridline" x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}"/><text class="tick" x="${pl-8}" y="${yy+3}" text-anchor="end">${Math.round(hcMax-(hcMax-hcMin)*i/4)}</text>`;}
+  const bw=iw/data.length*0.24;
+  const bars=data.map((d,i)=>`<rect x="${x(i)-bw-1}" y="${yB(d.hires)}" width="${bw}" height="${pt+ih-yB(d.hires)}" rx="2" fill="var(--teal)" opacity=".85"/>
+   <rect x="${x(i)+1}" y="${yB(d.exits)}" width="${bw}" height="${pt+ih-yB(d.exits)}" rx="2" fill="var(--rose)" opacity=".8"/>`).join("");
+  const line=data.map((d,i)=>`${i?"L":"M"}${x(i)},${yH(d.hc)}`).join(" ");
+  const dots=data.map((d,i)=>`<circle cx="${x(i)}" cy="${yH(d.hc)}" r="3" fill="#fff" stroke="var(--primary)" stroke-width="2"><title>${d.m}: ${d.hc} employees</title></circle>`).join("");
+  const labels=data.map((d,i)=>`<text class="tick" x="${x(i)}" y="${H-8}" text-anchor="middle">${d.m}</text>`).join("");
+  $(el).innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${g}${bars}
+    <path d="${line}" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linejoin="round"/>${dots}
+    <line class="axis" x1="${pl}" x2="${W-pr}" y1="${pt+ih}" y2="${pt+ih}"/>${labels}</svg>`;
+}
+/* SVG area chart for engagement */
+function areaChart(el,data,key,labelKey,min,max,color){
+  const W=420,H=200,pl=32,pr=12,pt=14,pb=26,iw=W-pl-pr,ih=H-pt-pb;
+  const x=i=>pl+iw*i/(data.length-1), y=v=>pt+ih-(v-min)/(max-min)*ih;
+  let g="";for(let i=0;i<=3;i++){const yy=pt+ih*i/3;g+=`<line class="gridline" x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}"/><text class="tick" x="${pl-6}" y="${yy+3}" text-anchor="end">${(max-(max-min)*i/3).toFixed(1)}</text>`;}
+  const path=data.map((d,i)=>`${i?"L":"M"}${x(i)},${y(d[key])}`).join(" ");
+  const area=`${path} L${x(data.length-1)},${pt+ih} L${pl},${pt+ih} Z`;
+  const dots=data.map((d,i)=>`<circle cx="${x(i)}" cy="${y(d[key])}" r="3.4" fill="#fff" stroke="${color}" stroke-width="2"><title>${d[labelKey]}: ${d[key]}</title></circle>`).join("");
+  const labels=data.map((d,i)=>`<text class="tick" x="${x(i)}" y="${H-7}" text-anchor="middle">${d[labelKey]}</text>`).join("");
+  $(el).innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}">${g}<path d="${area}" fill="${color}" opacity=".12"/>
+    <path d="${path}" fill="none" stroke="${color}" stroke-width="2.5"/>${dots}${labels}</svg>`;
+}
+/* Stacked turnover chart */
+function turnoverChart(el,data){
+  const W=760,H=250,pl=36,pr=14,pt=14,pb=28,iw=W-pl-pr,ih=H-pt-pb;
+  const max=Math.max(...data.map(d=>d.v+d.i))*1.25;
+  const bw=iw/data.length*0.5, x=i=>pl+iw*(i+.5)/data.length;
+  let g="";for(let i=0;i<=4;i++){const yy=pt+ih*i/4;g+=`<line class="gridline" x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}"/><text class="tick" x="${pl-6}" y="${yy+3}" text-anchor="end">${(max-max*i/4).toFixed(1)}%</text>`;}
+  const bars=data.map((d,i)=>{
+    const hv=d.v/max*ih, hi=d.i/max*ih;
+    return `<rect x="${x(i)-bw/2}" y="${pt+ih-hv-hi}" width="${bw}" height="${hi}" fill="var(--muted)" opacity=".55" rx="2"><title>${d.m} involuntary ${d.i}%</title></rect>
+            <rect x="${x(i)-bw/2}" y="${pt+ih-hv}" width="${bw}" height="${hv}" fill="var(--rose)" opacity=".85" rx="2"><title>${d.m} voluntary ${d.v}%</title></rect>`;}).join("");
+  const labels=data.map((d,i)=>`<text class="tick" x="${x(i)}" y="${H-8}" text-anchor="middle">${d.m}</text>`).join("");
+  $(el).innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}">${g}${bars}<line class="axis" x1="${pl}" x2="${W-pr}" y1="${pt+ih}" y2="${pt+ih}"/>${labels}</svg>`;
+}
+/* Salary band ranges */
+function bandChart(el,bands){
+  const W=560,rowH=44,H=bands.length*rowH+34,pl=140,pr=48,iw=W-pl-pr;
+  const max=Math.max(...bands.map(b=>b.max))*1.05, min=0;
+  const x=v=>pl+(v-min)/(max-min)*iw;
+  const rows=bands.map((b,i)=>{const y=18+i*rowH+rowH/2;
+    return `<text class="tick" x="${pl-10}" y="${y+4}" text-anchor="end" style="font-size:11.5px;fill:var(--text)">${b.lvl}</text>
+    <line x1="${x(b.min)}" x2="${x(b.max)}" y1="${y}" y2="${y}" stroke="var(--primary-soft)" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="${x(b.med)}" cy="${y}" r="6" fill="var(--primary)"><title>${b.lvl} median $${b.med}k</title></circle>
+    <text class="tick" x="${x(b.max)+8}" y="${y+4}">$${b.max}k</text>`;}).join("");
+  let ticks="";for(let v=0;v<=max;v+=60){ticks+=`<line class="gridline" x1="${x(v)}" x2="${x(v)}" y1="10" y2="${H-20}"/><text class="tick" x="${x(v)}" y="${H-6}" text-anchor="middle">$${v}k</text>`;}
+  $(el).innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}">${ticks}${rows}</svg>`;
+}
+
+/* ============================================================
+   PAGE RENDERING
+   ============================================================ */
+const PAGE_META={
+  dashboard:["People Dashboard","Company-wide workforce overview · FY2026"],
+  employees:["Employee Analytics","Directory, demographics and workforce composition"],
+  recruitment:["Recruitment Analytics","Pipeline health, sourcing and offer performance"],
+  compensation:["Compensation Analytics","Salary bands, equity and budget utilization"],
+  retention:["Retention Analytics","Turnover trends, exit drivers and flight risk"]
+};
+function renderDashboard(){
+  renderKpis("#kpiRow",DATA.kpis.dashboard);
+  headcountChart("#chartHeadcount",DATA.headcount);
+  barList("#deptBars",DATA.departments);
+  areaChart("#chartEngagement",DATA.engagement,"v","q",6.5,8.5,"var(--teal)");
+  funnel("#pipelineFunnel",DATA.pipeline);
+  barList("#diversityBars",DATA.diversity,{max:100,fmt:v=>v+"%",color:()=>"var(--violet)"});
+}
+function renderRecruitment(){
+  renderKpis("#recKpis",DATA.kpis.recruitment);
+  barList("#tthBars",DATA.tth,{fmt:v=>v+"d",color:v=>v>40?"var(--rose)":v>34?"var(--amber)":"var(--teal)"});
+  barList("#sourceBars",DATA.sources,{max:35,fmt:v=>v+"%"});
+  barList("#offerBars",DATA.offers,{max:100,fmt:v=>v+"%",color:v=>v>=88?"var(--teal)":v>=82?"var(--primary)":"var(--amber)"});
+  funnel("#recFunnel",DATA.pipeline);
+  $("#reqBody").innerHTML=DATA.reqs.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td>
+    <td><span class="badge info">${r[3]}</span></td><td>${r[4]}</td><td>${r[5]}</td>
+    <td><span class="badge ${r[6]==="High"?"bad":r[6]==="Medium"?"warn":"good"}">${r[6]}</span></td></tr>`).join("");
+}
+function renderCompensation(){
+  renderKpis("#compKpis",DATA.kpis.compensation);
+  bandChart("#chartBands",DATA.bands);
+  barList("#budgetBars",DATA.budget,{max:100,fmt:v=>v+"%",color:v=>v>85?"var(--rose)":v>70?"var(--primary)":"var(--teal)"});
+  $("#equityBody").innerHTML=DATA.equity.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td>
+    <td><span class="badge ${r[4]==="Yes"?"good":""}">${r[4]}</span></td></tr>`).join("");
+  barList("#equityGapBars",DATA.equityGap,{max:4,fmt:v=>v+"%",color:v=>v>2?"var(--rose)":v>1?"var(--amber)":"var(--teal)"});
+}
+function renderRetention(){
+  renderKpis("#retKpis",DATA.kpis.retention);
+  turnoverChart("#chartTurnover",DATA.turnover);
+  barList("#exitBars",DATA.exits,{max:30,fmt:v=>v+"%",color:()=>"var(--rose)"});
+  const fill=(dept="")=>{
+    const rows=DATA.risk.filter(r=>!dept||r[1]===dept);
+    $("#riskBody").innerHTML=rows.length?rows.map(r=>`<tr><td><div class="person"><span class="avatar">${initials(r[0])}</span><b>${r[0]}</b></div></td>
+      <td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]} / 10</td>
+      <td><span class="badge ${r[5]>=80?"bad":r[5]>=70?"warn":"info"}">${r[5]}</span></td><td>${r[6]}</td></tr>`).join("")
+      :`<tr><td colspan="7" class="empty">No employees match this filter.</td></tr>`;
+    $("#riskMeta").textContent=`${rows.length} employees flagged · model refreshed weekly`;
+  };
+  const sel=$("#riskFilter");
+  if(sel.options.length<2)[...new Set(DATA.risk.map(r=>r[1]))].forEach(d=>sel.add(new Option(d,d)));
+  sel.onchange=()=>fill(sel.value); fill();
+}
+
+/* -------- Employee table: search, filter, sort -------- */
+let sortKey="name",sortDir=1;
+function renderEmployees(){
+  renderKpis("#empKpis",DATA.kpis.employees);
+  const sel=$("#empDept");
+  if(sel.options.length<2)DEPTS.forEach(d=>sel.add(new Option(d,d)));
+  drawEmp();
+}
+function drawEmp(){
+  const q=$("#empSearch").value.trim().toLowerCase();
+  const d=$("#empDept").value,s=$("#empStatus").value,r=$("#empRisk").value;
+  let rows=EMPLOYEES.filter(e=>
+    (!q||[e.name,e.role,e.location,e.dept].join(" ").toLowerCase().includes(q))&&
+    (!d||e.dept===d)&&(!s||e.status===s)&&(!r||e.risk===r));
+  rows.sort((a,b)=>{const A=a[sortKey],B=b[sortKey];return (typeof A==="number"?A-B:String(A).localeCompare(String(B)))*sortDir;});
+  $("#empBody").innerHTML=rows.length?rows.map(e=>`<tr>
+    <td><div class="person"><span class="avatar">${initials(e.name)}</span><div><b>${e.name}</b><div style="font-size:11.5px;color:var(--muted)">#${e.id}</div></div></div></td>
+    <td>${e.dept}</td><td>${e.role}</td><td>${e.location}</td><td>${e.tenure}</td><td>${money(e.salary)}</td>
+    <td><span class="badge ${e.perf==="Outstanding"?"good":e.perf==="Developing"?"warn":""}">${e.perf}</span></td>
+    <td><span class="badge ${e.risk==="High"?"bad":e.risk==="Medium"?"warn":"good"}">${e.risk}</span></td>
+    <td><span class="badge ${e.status==="Active"?"info":e.status==="Notice period"?"bad":"warn"}">${e.status}</span></td></tr>`).join("")
+    :`<tr><td colspan="9" class="empty">No employees match your filters.</td></tr>`;
+  $("#empMeta").textContent=`Showing ${rows.length} of ${EMPLOYEES.length} employees · sorted by ${sortKey} (${sortDir>0?"asc":"desc"})`;
+  $$("#empTable th").forEach(th=>th.classList.toggle("sorted",th.dataset.key===sortKey));
+}
+$$("#empTable th").forEach(th=>th.addEventListener("click",()=>{
+  const k=th.dataset.key; sortDir=(k===sortKey)?-sortDir:1; sortKey=k; drawEmp();
+}));
+["#empSearch","#empDept","#empStatus","#empRisk"].forEach(sel=>$(sel).addEventListener("input",drawEmp));
+$("#empReset").addEventListener("click",()=>{$("#empSearch").value="";["#empDept","#empStatus","#empRisk"].forEach(s=>$(s).value="");drawEmp();});
+
+/* -------- Navigation, tabs, dropdown, mobile drawer -------- */
+const RENDERERS={dashboard:renderDashboard,employees:renderEmployees,recruitment:renderRecruitment,compensation:renderCompensation,retention:renderRetention};
+function goto(page){
+  $$(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
+  $$("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page&&b.textContent.trim().toLowerCase().includes(page.slice(0,4))));
+  const [t,s]=PAGE_META[page]||PAGE_META.dashboard; $("#pageTitle").textContent=t; $("#pageSub").textContent=s;
+  RENDERERS[page](); closeDrawer(); window.scrollTo({top:0,behavior:"smooth"});
+}
+$$("#nav button").forEach(b=>b.addEventListener("click",()=>goto(b.dataset.page)));
+$("#recTabs").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  $$("#recTabs button").forEach(x=>x.classList.toggle("active",x===b));
+  $$('[data-panel]').forEach(p=>p.style.display=p.dataset.panel===b.dataset.tab?"":"none");
+});
+const menu=$("#exportMenu");
+$("#exportBtn").addEventListener("click",e=>{e.stopPropagation();menu.classList.toggle("open");});
+document.addEventListener("click",()=>menu.classList.remove("open"));
+menu.addEventListener("click",e=>{const b=e.target.closest("button"); if(b)alert(`Export as ${b.dataset.fmt} — connect this to your reporting service.`);});
+$("#dateRange").addEventListener("change",e=>{ $("#pageSub").textContent=`${PAGE_META[currentPage()][1]} · ${e.target.value}`; });
+function currentPage(){return ($(".page.active").id||"page-dashboard").replace("page-","");}
+function closeDrawer(){$("#sidebar").classList.remove("open");$("#overlay").classList.remove("open");}
+$("#hamburger").addEventListener("click",()=>{$("#sidebar").classList.toggle("open");$("#overlay").classList.toggle("open");});
+$("#overlay").addEventListener("click",closeDrawer);
+
+/* Init */
+renderDashboard();
+</script>
+</body>
+</html>
